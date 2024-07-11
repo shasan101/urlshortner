@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/gommon/log"
 	urlshort "github.com/shasan101/urlshortner"
 )
 
@@ -30,7 +31,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", yamlHandler)
+	log.Fatal(http.ListenAndServe(":8080", yamlHandler))
 }
 
 func defaultMux() *http.ServeMux {
@@ -40,5 +41,6 @@ func defaultMux() *http.ServeMux {
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
+	log.Infof("about to print hello world\n")
 	fmt.Fprintln(w, "Hello, world!")
 }

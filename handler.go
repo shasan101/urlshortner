@@ -1,8 +1,10 @@
 package urlshort
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/labstack/gommon/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -13,14 +15,17 @@ import (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	//	TODO: Implement this...
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		fmt.Printf("map has: %v\n\n", pathsToUrls)
 		for p, u := range pathsToUrls {
 			if p == req.URL.Path {
+				log.Infof("Map Handler func found mapping for %v, as %v\n", req.URL.Path, u)
 				_, err := w.Write([]byte(u))
 				if err != nil {
-					break
+					log.Warnf("Map Handler func is going to fall back")
+					fallback.ServeHTTP(w, req)
 				}
+				return
 			}
 		}
 		fallback.ServeHTTP(w, req)
@@ -50,17 +55,21 @@ type PathMappings struct {
 
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	shortenedPaths := make([]PathMappings, 0)
-	err := yaml.Unmarshal(yml, shortenedPaths)
+	err := yaml.Unmarshal(yml, &shortenedPaths)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("yaml parsed: %v\n\n", shortenedPaths)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		for _, sp := range shortenedPaths {
 			if sp.Path == req.URL.Path {
+				log.Infof("YAML Handler func found mapping for %v, as %v\n", req.URL.Path, sp.Url)
 				_, err := w.Write([]byte(sp.Url))
 				if err != nil {
-					break
+					log.Warnf("YAML Handler func is going to fall back")
+					fallback.ServeHTTP(w, req)
 				}
+				return
 			}
 		}
 		fallback.ServeHTTP(w, req)
